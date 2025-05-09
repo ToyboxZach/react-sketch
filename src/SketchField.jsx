@@ -478,7 +478,7 @@ class SketchField extends PureComponent {
 
   _handleRedo(obj, next, curState) {
     if (obj.__version == 0) {
-      this.this._fc.add(obj);
+      this._fc.add(obj);
       obj.__version = 1;
     } else {
       obj.__version += 1;
