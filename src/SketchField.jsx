@@ -181,7 +181,6 @@ class SketchField extends PureComponent {
    */
   _onObjectAdded = (e) => {
     let obj = e.target;
-
     obj.__version = 1;
     // record current object state as json and save as originalState
     //BEAUTIFY ADD
@@ -209,6 +208,10 @@ class SketchField extends PureComponent {
 
   _onObjectModified = (e) => {
     let obj = e.target;
+    if(!obj){
+      return
+    }
+
     if (!obj.__version && obj._objects) {
       this._history.atomicStart();
       let i = 0;
@@ -246,7 +249,7 @@ class SketchField extends PureComponent {
 
     obj.__originalState = this._objectToString(objState);
 
-    this._history.keep([obj, prevState]);
+    this._history.keep([obj, prevState, obj.__originalState]);
   };
 
   /**
@@ -475,7 +478,7 @@ class SketchField extends PureComponent {
 
   _handleRedo(obj, next, curState) {
     if (obj.__version == 0) {
-      this.canvas.add(obj);
+      this.this._fc.add(obj);
       obj.__version = 1;
     } else {
       obj.__version += 1;
@@ -483,20 +486,30 @@ class SketchField extends PureComponent {
       obj.setCoords();
     }
   }
+  
   redo = () => {
     const history = this._history;
+    if(!history.canRedo()) {
+      return;
+    }
     history.ignore = true;
-    if (history.canRedo()) {
-      let [obj, prevState] = history.getCurrent();
+    const current = history.redoList.pop();
 
+    if (current) {
+      const [obj] = current;
+
+      //@ts-expect-error  hack to replace package
+      this.canvas = this._fc;
       if (obj.atomicList) {
         obj.atomicList.forEach((item) => {
-          this._hanldeRedo(this.history[0], this.history[1]);
+          this._handleRedo(...item);
         });
       } else {
-        this._hanldeRedo(obj, prevState);
+        this._handleRedo(...current);
       }
+      history.undoList.push(current);
     }
+
     this._fc.renderAll();
     history.ignore = true;
     if (this.props.onChange) {
@@ -584,6 +597,7 @@ class SketchField extends PureComponent {
     this._history.clear();
     if (this.backgroundImage) {
       this.backgroundImage.eraser = null;
+      this.backgroundImage.__lastEraser = null;
       this._history.ignore = true;
       this._fc.add(this.backgroundImage);
       this._history.ignore = false;
@@ -609,7 +623,7 @@ class SketchField extends PureComponent {
       this._history.atomicStart();
       selected.forEach((obj) => {
         obj.__removed = true;
-        let objState = this._objectToJSON(obj);
+        let objState = this.toJSON(obj);
         obj.__originalState = JSON.stringify(objState);
         let state = this._objectToString(objState);
         this._history.keep([obj, state, state]);
@@ -756,10 +770,11 @@ class SketchField extends PureComponent {
 
       for (const target of e.targets) {
         if (target) {
-          if ((target = this.backgroundImage)) {
+          if ((target == this.backgroundImage)) {
             this._history.keep([
               this.backgroundImage,
               this.backgroundImage.__lastEraser || "{}",
+              
             ]);
             let objState = target.eraser
               ? this._objToJSON(target.eraser)
@@ -775,11 +790,6 @@ class SketchField extends PureComponent {
       // this._onObjectAdded({ target: e.path });
       this._history.atomicEnd();
     });
-    // IText Events fired on Adding Text
-    // canvas.on("text:event:changed", console.log)
-    // canvas.on("text:selection:changed", console.log)
-    // canvas.on("text:editing:entered", console.log)
-    // canvas.on("text:editing:exited", console.log)
 
     this.disableTouchScroll();
 

@@ -1,9 +1,9 @@
-declare module "react-sketch" {
+declare module "@schlaegerz/react-sketch" {
   import * as React from "react";
-  import { fabric, StaticCanvas } from "fabric";
+  import { fabric } from "fabric";
 
   class FabricCanvasTool {
-    constructor(canvas: any): void;
+    constructor(canvas: any);
 
     configureCanvas(props: any): void;
 
@@ -18,6 +18,7 @@ declare module "react-sketch" {
   }
 
   export class SketchField extends React.PureComponent<{
+    _fc: fabric.Canvas;
     // the color of the line
     lineColor?: string;
     // The width of the line
@@ -67,7 +68,7 @@ declare module "react-sketch" {
      * Disable touch Scrolling on Canvas
      */
     disableTouchScroll(): void;
-    getCanvas(): StaticCanvas;
+    getCanvas(): fabric.Canvas;
 
     /**
      * Add an image as object to the canvas
@@ -81,10 +82,7 @@ declare module "react-sketch" {
      *   scale: <Number: initial scale of image>
      * }
      */
-    addImg(
-      dataUrl: string,
-      options?: { left?: number; top?: number; scale?: number }
-    ): void;
+    addImg(dataUrl: string, options?: { left?: number; top?: number; scale?: number }): void;
 
     /**
      * Zoom the drawing by the factor specified
@@ -201,6 +199,6 @@ declare module "react-sketch" {
     ): void;
 
     addText(text: string, options?: {}): void;
-    addTool(toolName: string, tool: FabricCanvasTool);
+    addTool(toolName: string, tool: FabricCanvasTool): void;
   }
 }
